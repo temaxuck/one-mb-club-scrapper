@@ -1,8 +1,10 @@
 package scrapper
 
 import (
+	"fmt"
 	"io"
 	"net/http"
+	"regexp"
 )
 
 func FetchBody(url string) ([]byte, error) {
@@ -12,13 +14,19 @@ func FetchBody(url string) ([]byte, error) {
 		return nil, fmt.Errorf("Couldn't fetch resource data: %v\n", err)
 	}
 
-	defer r.Body.Close()
+	defer resp.Body.Close()
 
-	if r.StatusCode != 200 {
-		return nil, fmt.Errorf("Resource responsed with non OK status: %d\n", r.StatusCode)
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("Resource responsed with non OK status: %d\n", resp.StatusCode)
 	}
 
-	return io.ReadAll(r.Body), nil
+	body, err := io.ReadAll(resp.Body)
+
+	if err != nil {
+		return nil, fmt.Errorf("Couldn't read body: %v\n", err)
+	}
+	
+	return body, nil
 }
 
 func Scrap1MbClub() (urls []string, err error) {
@@ -38,10 +46,10 @@ func Scrap1MbClub() (urls []string, err error) {
 	resourceLinkPattern := regexp.MustCompile(`<a[^>]*href="([^"]+)"[^>]*>`)
 	resourceLinkMatches := resourceLinkPattern.FindAllStringSubmatch(tableContents, -1)
 
-	result := []string{}
+	urls = []string{}
 
 	for _, url := range resourceLinkMatches {
-		result = append(result, url[1])
+		urls = append(urls, url[1])
 	}
-	return result, nil
+	return urls, nil
 }

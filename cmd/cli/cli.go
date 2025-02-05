@@ -4,6 +4,10 @@ import (
 	// "flag"
 	"fmt"
 	"os"
+	"sync"
+
+	"github.com/temaxuck/one-mb-club-scrapper/internal/metrics"
+	"github.com/temaxuck/one-mb-club-scrapper/internal/scrapper"
 )
 
 type Cmd int
@@ -21,7 +25,24 @@ func (cmd Cmd) handle() {
 		panic("TODO")
 		break
 	case CmdMetrics:
-		panic("TODO")
+		urls, err := scrapper.Scrap1MbClub()
+		if err !=nil {
+			fmt.Printf("ERROR: %s\n", err)
+			os.Exit(1)
+		}
+
+		var wg sync.WaitGroup
+		
+		for _, url := range urls {
+			wg.Add(1)
+			
+			go func() {
+				defer wg.Done()
+				fmt.Printf("%v\n", metrics.GatherMetrics(url))
+			}()
+		}
+
+		wg.Wait()
 		break
 	case CmdSearch:
 		panic("TODO")
